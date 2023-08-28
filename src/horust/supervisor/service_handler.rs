@@ -79,12 +79,6 @@ impl ServiceHandler {
     pub fn restart_attempts_are_over(&self) -> bool {
         self.service.restart.attempts == 0 || self.restart_attempts > self.service.restart.attempts
     }
-    pub fn add_healthcheck_event(&mut self, check: HealthinessStatus) {
-        let previous_hc = self.healthiness_checks_failed.unwrap_or(0);
-        let new_hc =
-            i32::from(self.is_alive_state() && !matches!(check, HealthinessStatus::Healthy));
-        self.healthiness_checks_failed = Some(previous_hc + new_hc);
-    }
 
     pub fn is_finished_failed(&self) -> bool {
         matches!(self.status, ServiceStatus::FinishedFailed)
@@ -98,7 +92,7 @@ impl ServiceHandler {
     pub fn has_some_failed_healthchecks(&self) -> bool {
         // If health status message didn't reach the service handler on time, it has failed too fast
         // So we consider it as unhealthy (thus the `1` for the unwrap).
-        self.healthiness_checks_failed.unwrap_or(1) > 0
+        false
     }
 
     pub fn is_initial(&self) -> bool {

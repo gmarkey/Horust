@@ -187,13 +187,6 @@ impl Supervisor {
 
                 vec![]
             }
-            Event::HealthCheck(s_name, health) => {
-                let sh = self.repo.get_mut_sh(&s_name);
-                // Count the failed healthiness checks. The state change producer wll handle states
-                // changes (if they're needed)
-                sh.add_healthcheck_event(health);
-                vec![]
-            }
             Event::ShuttingDownInitiated(shutting_down) => {
                 match shutting_down {
                     ShuttingDown::Gracefully => {

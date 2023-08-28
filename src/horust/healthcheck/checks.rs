@@ -30,10 +30,7 @@ impl Check for HttpCheck {
         healthiness
             .http_endpoint.as_ref()
             .map(|endpoint| {
-                if cfg!(not(feature = "http-healthcheck")) {
-                    error!("There is an http based healthcheck, but horust was built without the http-healthcheck feature (thus it will never pass these checks).");
-                    return false;
-                }
+                return false;
                 #[cfg(feature = "http-healthcheck")]
                     {
                         let client = Client::builder()

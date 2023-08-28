@@ -35,11 +35,6 @@ impl Worker {
     }
     fn run(self) {
         loop {
-            let status = check_health(&self.service.healthiness);
-            self.bus.send_event(Event::HealthCheck(
-                self.service.name.clone(),
-                status.clone(),
-            ));
             match self
                 .work_done_notifier
                 .recv_timeout(Duration::from_millis(1000))
