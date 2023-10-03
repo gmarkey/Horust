@@ -1,9 +1,11 @@
 use std::time::Duration;
 
 use assert_cmd::cmd::Command;
+#[cfg(target_os = "linux")]
+use libc::SIGPOLL;
 use libc::{
-    c_int, SIGABRT, SIGBUS, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGKILL, SIGPIPE, SIGPOLL, SIGPROF,
-    SIGQUIT, SIGSEGV, SIGSYS, SIGTERM, SIGTRAP, SIGUSR1, SIGUSR2, SIGVTALRM, SIGXCPU, SIGXFSZ,
+    c_int, SIGABRT, SIGBUS, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGKILL, SIGPIPE, SIGPROF, SIGQUIT,
+    SIGSEGV, SIGSYS, SIGTERM, SIGTRAP, SIGUSR1, SIGUSR2, SIGVTALRM, SIGXCPU, SIGXFSZ,
 };
 use predicates::prelude::predicate;
 use utils::*;
@@ -36,7 +38,7 @@ attempts = {}
             .display(),
         attempts
     );
-    store_service(
+    store_service_script(
         temp_dir.path(),
         failing_once_script.as_str(),
         Some(service.as_str()),
@@ -73,7 +75,7 @@ attempts = 0
 strategy = "on-failure"
 "#
     .to_string();
-    store_service(
+    store_service_script(
         temp_dir.path(),
         failing_once_script.as_str(),
         Some(service.as_str()),
@@ -101,7 +103,7 @@ kill -{} $$
 [restart]
 strategy = "always"
 "#;
-    store_service(
+    store_service_script(
         temp_dir.path(),
         suicide_script.as_str(),
         Some(service),
@@ -119,9 +121,15 @@ strategy = "always"
 
 #[test]
 fn test_restart_always_killed_by_signals() -> Result<(), std::io::Error> {
+    #[cfg(target_os = "linux")]
     const DEFAULT_TERMINATE: [c_int; 20] = [
         SIGABRT, SIGBUS, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGKILL, SIGPIPE, SIGPOLL, SIGPROF,
         SIGQUIT, SIGSEGV, SIGSYS, SIGTERM, SIGTRAP, SIGUSR1, SIGUSR2, SIGVTALRM, SIGXCPU, SIGXFSZ,
+    ];
+    #[cfg(not(target_os = "linux"))]
+    const DEFAULT_TERMINATE: [c_int; 19] = [
+        SIGABRT, SIGBUS, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGKILL, SIGPIPE, SIGPROF, SIGQUIT,
+        SIGSEGV, SIGSYS, SIGTERM, SIGTRAP, SIGUSR1, SIGUSR2, SIGVTALRM, SIGXCPU, SIGXFSZ,
     ];
     for sig in DEFAULT_TERMINATE {
         test_restart_always_signal(sig as i32)?;
@@ -142,7 +150,7 @@ sleep 0.5
 [restart]
 strategy = "always"
 "#;
-    store_service(temp_dir.path(), suicide_script, Some(service), None);
+    store_service_script(temp_dir.path(), suicide_script, Some(service), None);
     cmd.timeout(Duration::from_millis(2000))
         .assert()
         .failure()
